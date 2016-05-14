@@ -12,6 +12,11 @@ from time import gmtime, strftime
 from osgeo import osr
 
 
+def deb(string):
+    return 0
+    print string
+
+
 def callOSMOT(host,dbname,user,password):
     cmd='''python osmot/osmot.py -hs '''+host+''' -d '''+dbname+''' -u '''+user+''' -p '''+password+'''
 	'''
@@ -62,6 +67,95 @@ def makeOverpassQuery(currentmap):
     return  'http://overpass.osm.rambler.ru/cgi/interpreter?'+urllib.urlencode(data)
 
     #return query
+
+def compareStatistic(host,dbname,user,password,osmFileHandler,currentmap):
+    '''
+    compare route len and routes count of already imported network with stattable for currentmap
+    return array with statistic
+    '''
+    prev=getLastStatiscticLine(host,dbname,user,password,osmFileHandler,currentmap)
+    current=calcCurrentStatistic(host,dbname,user,password,osmFileHandler,currentmap)
+    diff=diffStatisticArrays(prev,current)
+    diff={'deletedRoutesCount':0,'addedRoutesCount':0,'lenChange':0}
+    return diff
+
+def writeStatistic(host,dbname,user,password,osmFileHandler,currentmap):
+    '''
+    save statistic of currently imported network
+    '''
+    current=calcCurrentStatistic(host,dbname,user,password,osmFileHandler,currentmap)
+    #sql line of add current
+
+
+    return 0
+
+def calcCurrentStatistic(cursor):
+    '''
+    return array with statistic from osmot importted
+    '''
+
+    try:
+            cursor.execute('''
+            SELECT
+            *
+            FROM planet_osm_rels
+            WHERE
+            tags::VARCHAR LIKE '%route,trolleybus%'
+            OR tags::VARCHAR LIKE '%route,tram%'
+            OR tags::VARCHAR LIKE '%route,bus%'
+            OR tags::VARCHAR LIKE '%route,share_taxi%'
+                    ''')
+    except:
+            return 0
+
+    rows = cursor.fetchall()
+    for row in rows:
+            members_list = row[4][::2]
+            roles_list = row[4][1::2]
+
+            current_route_id = row[0]
+            deb('Parce relation' + str(current_route_id))
+            
+            WaysInCurrentRel=[]
+            
+            #Put in WaysInCurrentRel id's of ways with empty roles
+            for i in range(0,len(members_list)):
+                    member_code=members_list[i]
+                    member_role=roles_list[i]
+                    if ((member_code.find('w')>=0) and ((member_role=='') or (member_role=='forward') or (member_role=='backward')  or (member_role=='highway') )):
+                            WaysInCurrentRel.append(member_code)
+                    
+            for (idx, item) in enumerate(WaysInCurrentRel):
+                if item.find('n'):
+                    item = item[1:]
+                    WaysInCurrentRel[idx] = item
+
+            if len(WaysInCurrentRel)<1:
+                    continue
+
+            print ('ways in cuttrent rel list:')
+            print WaysInCurrentRel
+            #calc for length of all routes
+            #длинна в однопутном исчислении. каждый вей считается 1 раз
+            sql='SELECT sum(ST_Length_Spheroid(ST_Transform(way,4326),'SPHEROID["WGS 84",6378137,298.257223563]'))/1000 FROM planet_osm_line WHERE osm_id IN ('+','.join(WaysInCurrentRel)+')'
+            print sql
+            quit()
+            #calc for length of whole streets with routes
+
+
+
+
+        
+    #SELECT ARRAY(SELECT ref) as array from relations...
+    stat={'routeRefsArray':'{}','RoutesCount':0,'lenNetwork':0,'lenRoutes':0}
+
+def getLastStatiscticLine(host,dbname,user,password,osmFileHandler,currentmap):
+    '''
+    return array with statistic from statistic table
+    '''    
+    #select * from statistic where id='' order by dt desc LIMIT 1;
+    stat={'routeRefsArray':'{}','RoutesCount':0,'len':0}
+
 
 def process():
 
@@ -146,7 +240,10 @@ ORDER BY map_id;
             importdb(host,dbname,user,password,osmFileHandler)
             
             #call osmot - do preprocessin
-            callOSMOT(host,dbname,user,password)    
+            callOSMOT(host,dbname,user,password)
+                
+        stat = calcCurrentStatistic(cur)    
+        quit() 
             
         #stage1 - simple png picture
 
