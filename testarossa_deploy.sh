@@ -150,6 +150,36 @@ dpkg -s qgis
 #if >2.8 - see ngw_qgis docs for next instruction
 
 
+добавляем функции postgresql
+
+-- Function: unnest_rel_members_ways(anyarray)
+
+-- DROP FUNCTION unnest_rel_members_ways(anyarray);
+
+CREATE OR REPLACE FUNCTION unnest_rel_members_ways(anyarray)
+  RETURNS SETOF anyelement AS
+$BODY$SELECT substring($1[i] from E'w(\\d+)') FROM
+generate_series(array_lower($1,1),array_upper($1,1)) i WHERE 
+$1[i] LIKE 'w%' /*only ways*/
+AND /*exclude platforms*/
+($1[i+1] ='' 
+OR $1[i+1] IN ('forward','backward','highway')
+)
+;$BODY$
+  LANGUAGE sql VOLATILE
+  COST 100
+  ROWS 1000;
+ALTER FUNCTION unnest_rel_members_ways(anyarray)
+  OWNER TO postgres;
+GRANT EXECUTE ON FUNCTION unnest_rel_members_ways(anyarray) TO public;
+GRANT EXECUTE ON FUNCTION unnest_rel_members_ways(anyarray) TO postgres;
+GRANT EXECUTE ON FUNCTION unnest_rel_members_ways(anyarray) TO "osmot users";
+
+
+
+
+
+
 gdal_translate -of "GTIFF" -outsize 1000 1000  -projwin  4143247 7497160 4190083 7468902   ngw.xml test.tiff
 gdal_translate -of "GTIFF" -outsize 1000 1000  -projwin  4131491 7550235 4253599 7468050   ngw.xml test.tiff
 gdal_translate -of "GTIFF" -outsize 1000 1000  -projwin  4010164 7630600 4498594 7301859   wmsosmot.xml test.tiff

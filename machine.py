@@ -93,61 +93,44 @@ def calcCurrentStatistic(cursor):
     '''
     return array with statistic from osmot importted
     '''
-
+    print 'calc' 
     try:
             cursor.execute('''
-            SELECT
-            *
-            FROM planet_osm_rels
-            WHERE
-            tags::VARCHAR LIKE '%route,trolleybus%'
+
+
+
+SELECT sum(ST_Length_Spheroid(ST_Transform(planet_osm_line.way,4326),'SPHEROID["WGS 84",6378137,298.257223563]'))/1000 
+FROM
+planet_osm_line,
+(
+SELECT
+
+  unnest_rel_members_ways(members) as members 
+from planet_osm_rels
+WHERE 
+
+tags::VARCHAR LIKE '%route,trolleybus%'
             OR tags::VARCHAR LIKE '%route,tram%'
             OR tags::VARCHAR LIKE '%route,bus%'
             OR tags::VARCHAR LIKE '%route,share_taxi%'
+) AS unnestWays
+WHERE unnestWays.members::bigint = planet_osm_line.osm_id;
                     ''')
-    except:
-            return 0
+    #todo: open access to postgresql funnction GRANT EXECUTE ON FUNCTION unnest_rel_members_ways(anyarray) TO GROUP "osmot users";
 
+    except:
+            print 'wrong'
+            return 0
+    print 'calc'
     rows = cursor.fetchall()
     for row in rows:
-            members_list = row[4][::2]
-            roles_list = row[4][1::2]
-
-            current_route_id = row[0]
-            deb('Parce relation' + str(current_route_id))
-            
-            WaysInCurrentRel=[]
-            
-            #Put in WaysInCurrentRel id's of ways with empty roles
-            for i in range(0,len(members_list)):
-                    member_code=members_list[i]
-                    member_role=roles_list[i]
-                    if ((member_code.find('w')>=0) and ((member_role=='') or (member_role=='forward') or (member_role=='backward')  or (member_role=='highway') )):
-                            WaysInCurrentRel.append(member_code)
-                    
-            for (idx, item) in enumerate(WaysInCurrentRel):
-                if item.find('n'):
-                    item = item[1:]
-                    WaysInCurrentRel[idx] = item
-
-            if len(WaysInCurrentRel)<1:
-                    continue
-
-            print ('ways in cuttrent rel list:')
-            print WaysInCurrentRel
-            #calc for length of all routes
-            #длинна в однопутном исчислении. каждый вей считается 1 раз
-            sql='SELECT sum(ST_Length_Spheroid(ST_Transform(way,4326),'SPHEROID["WGS 84",6378137,298.257223563]'))/1000 FROM planet_osm_line WHERE osm_id IN ('+','.join(WaysInCurrentRel)+')'
-            print sql
-            quit()
-            #calc for length of whole streets with routes
-
-
-
+            lenRoutes = row[0]
+    print 'lenroutes='+str(lenRoutes)
 
         
     #SELECT ARRAY(SELECT ref) as array from relations...
-    stat={'routeRefsArray':'{}','RoutesCount':0,'lenNetwork':0,'lenRoutes':0}
+    stat={'routeRefsArray':'{}','RoutesCount':0,'lenNetwork':0,'lenRoutes':lenRoutes}
+    return stat
 
 def getLastStatiscticLine(host,dbname,user,password,osmFileHandler,currentmap):
     '''
@@ -216,7 +199,7 @@ ORDER BY map_id;
     rows = cur.fetchall()
     for currentmap in rows:
         print currentmap['map_id']
-        print currentmap['bbox_string']
+
 
 
         doPpreprocessing = False
