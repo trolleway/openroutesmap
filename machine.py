@@ -116,20 +116,59 @@ tags::VARCHAR LIKE '%route,trolleybus%'
 ) AS unnestWays
 WHERE unnestWays.members::bigint = planet_osm_line.osm_id;
                     ''')
-    #todo: open access to postgresql funnction GRANT EXECUTE ON FUNCTION unnest_rel_members_ways(anyarray) TO GROUP "osmot users";
 
     except:
-            print 'wrong'
+            print 'error in lenRoutes calc'
             return 0
-    print 'calc'
     rows = cursor.fetchall()
     for row in rows:
             lenRoutes = row[0]
     print 'lenroutes='+str(lenRoutes)
 
+    try:
+            cursor.execute('''
+SELECT COUNT(*) from planet_osm_rels
+WHERE 
+tags::VARCHAR LIKE '%route,trolleybus%'
+            OR tags::VARCHAR LIKE '%route,tram%'
+            OR tags::VARCHAR LIKE '%route,bus%'
+            OR tags::VARCHAR LIKE '%route,share_taxi%'
+                    ''')
+
+    except:
+            print 'error in RoutesCount calc'
+            return 0
+    rows = cursor.fetchall()
+    for row in rows:
+            osmRoutesCount = row[0]
+    print 'osmRoutesCount='+str(osmRoutesCount)
+
+
+
+    try:
+            cursor.execute('''
+SELECT
+count (distinct substring(tags::varchar from 'ref,(.*?)[,}]')) AS ref
+from planet_osm_rels
+WHERE 
+tags::VARCHAR LIKE '%route,trolleybus%'
+            OR tags::VARCHAR LIKE '%route,tram%'
+            OR tags::VARCHAR LIKE '%route,bus%'
+            OR tags::VARCHAR LIKE '%route,share_taxi%'
+ORDER BY ref
+;
+                    ''')
+
+    except:
+            print 'error in RoutesCount calc'
+            return 0
+    rows = cursor.fetchall()
+    for row in rows:
+            osmRefsCount = row[0]
+    print 'osmRefsCount='+str(osmRefsCount)
         
     #SELECT ARRAY(SELECT ref) as array from relations...
-    stat={'routeRefsArray':'{}','RoutesCount':0,'lenNetwork':0,'lenRoutes':lenRoutes}
+    stat={'routeRefsArray':'{}','osmRefsCount':osmRefsCount,'osmRoutesCount':osmRoutesCount,'lenNetwork':0,'lenRoutes':lenRoutes}
     return stat
 
 def getLastStatiscticLine(host,dbname,user,password,osmFileHandler,currentmap):
