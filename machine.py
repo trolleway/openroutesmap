@@ -144,7 +144,7 @@ tags::VARCHAR LIKE '%route,trolleybus%'
     print 'osmRoutesCount='+str(osmRoutesCount)
 
 
-
+    #routesCount
     try:
             cursor.execute('''
 SELECT
@@ -166,9 +166,37 @@ ORDER BY ref
     for row in rows:
             osmRefsCount = row[0]
     print 'osmRefsCount='+str(osmRefsCount)
+
+
+
+    #routesRefsArray
+    try:
+            cursor.execute('''
+SELECT ARRAY(SELECT * FROM
+(
+SELECT
+DISTINCT SUBSTRING(tags::varchar from 'ref,(.*?)[,}]') AS ref
+FROM planet_osm_rels
+WHERE 
+tags::VARCHAR LIKE '%route,trolleybus%'
+            OR tags::VARCHAR LIKE '%route,tram%'
+            OR tags::VARCHAR LIKE '%route,bus%'
+            OR tags::VARCHAR LIKE '%route,share_taxi%') AS refs
+ORDER BY NULLIF(regexp_replace(ref, E'\\D', '', 'g'), '')::int
+)
+;
+                    ''')
+
+    except:
+            print 'error in routesRefsArray calc'
+            return 0
+    rows = cursor.fetchall()
+    for row in rows:
+            routesRefsArray = row[0]
+    print 'routesRefsArray='+str(routesRefsArray)
         
-    #SELECT ARRAY(SELECT ref) as array from relations...
-    stat={'routeRefsArray':'{}','osmRefsCount':osmRefsCount,'osmRoutesCount':osmRoutesCount,'lenNetwork':0,'lenRoutes':lenRoutes}
+
+    stat={'routeRefsArray':routesRefsArray,'osmRefsCount':osmRefsCount,'osmRoutesCount':osmRoutesCount,'lenNetwork':0,'lenRoutes':lenRoutes}
     return stat
 
 def getLastStatiscticLine(host,dbname,user,password,osmFileHandler,currentmap):
