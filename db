@@ -1,0 +1,126 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 9.3.12
+-- Dumped by pg_dump version 9.3.12
+-- Started on 2016-05-17 23:05:54 MSK
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+--
+-- TOC entry 8 (class 2615 OID 18241)
+-- Name: meta; Type: SCHEMA; Schema: -; Owner: gisuser
+--
+
+CREATE SCHEMA meta;
+
+
+ALTER SCHEMA meta OWNER TO gisuser;
+
+SET search_path = meta, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- TOC entry 187 (class 1259 OID 18244)
+-- Name: maps; Type: TABLE; Schema: meta; Owner: gisuser; Tablespace: 
+--
+
+CREATE TABLE maps (
+    ogc_fid integer NOT NULL,
+    wkb_geometry public.geometry(MultiPolygon,4326),
+    map_id character varying,
+    name_short character varying,
+    name_official character varying,
+    transport character varying,
+    lang character varying,
+    size_px character varying,
+    map_status character varying
+);
+
+
+ALTER TABLE meta.maps OWNER TO gisuser;
+
+--
+-- TOC entry 186 (class 1259 OID 18242)
+-- Name: maps_ogc_fid_seq; Type: SEQUENCE; Schema: meta; Owner: gisuser
+--
+
+CREATE SEQUENCE maps_ogc_fid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE meta.maps_ogc_fid_seq OWNER TO gisuser;
+
+--
+-- TOC entry 3246 (class 0 OID 0)
+-- Dependencies: 186
+-- Name: maps_ogc_fid_seq; Type: SEQUENCE OWNED BY; Schema: meta; Owner: gisuser
+--
+
+ALTER SEQUENCE maps_ogc_fid_seq OWNED BY maps.ogc_fid;
+
+
+--
+-- TOC entry 3121 (class 2604 OID 18247)
+-- Name: ogc_fid; Type: DEFAULT; Schema: meta; Owner: gisuser
+--
+
+ALTER TABLE ONLY maps ALTER COLUMN ogc_fid SET DEFAULT nextval('maps_ogc_fid_seq'::regclass);
+
+
+--
+-- TOC entry 3241 (class 0 OID 18244)
+-- Dependencies: 187
+-- Data for Name: maps; Type: TABLE DATA; Schema: meta; Owner: gisuser
+--
+
+COPY maps (ogc_fid, wkb_geometry, map_id, name_short, name_official, transport, lang, size_px, map_status) FROM stdin;
+1	0106000020E6100000010000000103000000010000001100000006D8F1B034BC42408A64E44D76CA4B401963AF46FDD74240554986DD82C84B4057823F04E8DD4240C3E0F5E74BCB4B400FDED059BFE54240733ED01AF2D14B40552C88AF71EB42400D0CBFFD2DD84B4023F2449FD8EC42402D7FD5C32FDD4B40B9ADEAAEA4F742402195EEBCEDDE4B40B45591CF51F24240D5D3BA1D8FE04B40052CACB3DAEC42401408334580E04B40A173A0E10CED4240D02085C9F2E84B400032DBF6A1DD42407160029730F14B40387BE07A62D642403799CC305BF34B40432999294FCA4240037EF01AC8F44B402FA6CB402AB94240243E1CC089F34B4027EF6A680AB24240A3190141B5EC4B40E7ED1FDA67B24240BF7602FC68E14B4006D8F1B034BC42408A64E44D76CA4B40	MOSCOW TROLLEYBUS RU	\N	Питерский трамвай	trolleybus	ru	5000 0	\N
+\.
+
+
+--
+-- TOC entry 3247 (class 0 OID 0)
+-- Dependencies: 186
+-- Name: maps_ogc_fid_seq; Type: SEQUENCE SET; Schema: meta; Owner: gisuser
+--
+
+SELECT pg_catalog.setval('maps_ogc_fid_seq', 1, true);
+
+
+--
+-- TOC entry 3123 (class 2606 OID 18249)
+-- Name: maps_pkey; Type: CONSTRAINT; Schema: meta; Owner: gisuser; Tablespace: 
+--
+
+ALTER TABLE ONLY maps
+    ADD CONSTRAINT maps_pkey PRIMARY KEY (ogc_fid);
+
+
+--
+-- TOC entry 3124 (class 1259 OID 18253)
+-- Name: maps_wkb_geometry_geom_idx; Type: INDEX; Schema: meta; Owner: gisuser; Tablespace: 
+--
+
+CREATE INDEX maps_wkb_geometry_geom_idx ON maps USING gist (wkb_geometry);
+
+
+-- Completed on 2016-05-17 23:05:55 MSK
+
+--
+-- PostgreSQL database dump complete
+--
+
