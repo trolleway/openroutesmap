@@ -67,17 +67,23 @@ def makeOverpassQuery(currentmap):
     return  'http://overpass.osm.rambler.ru/cgi/interpreter?'+urllib.urlencode(data)
 
     #return query
+def diffStatisticArrays(prev,current):
 
-def compareStatistic(host,dbname,user,password,osmFileHandler,currentmap):
+    diff={'deletedRoutesCount':0,'addedRoutesCount':0,'lenChange':0}
+    return diff
+
+
+def compareStatistic(cursor,currentmap):
     '''
     compare route len and routes count of already imported network with stattable for currentmap
     return array with statistic
     '''
-    prev=getLastStatiscticLine(host,dbname,user,password,osmFileHandler,currentmap)
-    current=calcCurrentStatistic(host,dbname,user,password,osmFileHandler,currentmap)
+    prev=getLastStatiscticLine(cursor)
+    current=calcCurrentStatistic(cursor)
     diff=diffStatisticArrays(prev,current)
     diff={'deletedRoutesCount':0,'addedRoutesCount':0,'lenChange':0}
-    return diff
+    result=False
+    return result,diff
 
 def writeStatistic(host,dbname,user,password,osmFileHandler,currentmap):
     '''
@@ -171,7 +177,7 @@ ORDER BY ref
 
     #routesRefsArray
     try:
-            cursor.execute('''
+        cursor.execute('''
 SELECT ARRAY(SELECT * FROM
 (
 SELECT
@@ -187,19 +193,20 @@ ORDER BY NULLIF(regexp_replace(ref, E'\\D', '', 'g'), '')::int
 ;
                     ''')
 
+
+        rows = cursor.fetchall()
+        for row in rows:
+                routesRefsArray = row[0]
     except:
             print 'error in routesRefsArray calc'
-            return 0
-    rows = cursor.fetchall()
-    for row in rows:
-            routesRefsArray = row[0]
+            routesRefsArray=''
     print 'routesRefsArray='+str(routesRefsArray)
         
 
     stat={'routeRefsArray':routesRefsArray,'osmRefsCount':osmRefsCount,'osmRoutesCount':osmRoutesCount,'lenNetwork':0,'lenRoutes':lenRoutes}
     return stat
 
-def getLastStatiscticLine(host,dbname,user,password,osmFileHandler,currentmap):
+def getLastStatiscticLine(cursor):
     '''
     return array with statistic from statistic table
     '''    
@@ -292,8 +299,12 @@ ORDER BY map_id;
             #call osmot - do preprocessin
             callOSMOT(host,dbname,user,password)
                 
-        stat = calcCurrentStatistic(cur)    
-        quit() 
+        #stat = calcCurrentStatistic(cur)   
+        compareResult, stat=compareStatistic(cur,currentmap)
+        if (compareResult == False):
+            print 'not intresting'
+            continue
+        
             
         #stage1 - simple png picture
 
