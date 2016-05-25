@@ -56,7 +56,7 @@ def cleardb(host,dbname,user,password):
 
 def importdb(host,dbname,user,password, osmFileHandler):
 	os.system('''
-	osm2pgsql --create  --slim -E 3857 --database '''+dbname+''' --username '''+user+''' --password --port  5432 --host '''+host+''' --style default.style data.osm
+	osm2pgsql --create  --slim -E 3857 --database '''+dbname+''' --username '''+user+''' --password --port  5432 --host '''+host+''' --style default.style '''+osmFileHandler+'''
 	''')
 
 def makeOverpassQuery(currentmap):
@@ -64,7 +64,9 @@ def makeOverpassQuery(currentmap):
 
     data=  {'data':  '''[out:xml][timeout:55];(relation["route"="'''+currentmap['transport']+'''"]('''+currentmap['bbox_string']+'''););out meta;>;out meta qt;'''}
     print 'new '+urllib.unquote(urllib.urlencode(data)).decode('utf8')
-    return  'http://overpass.osm.rambler.ru/cgi/interpreter?'+urllib.urlencode(data)
+    #return  'http://overpass.osm.rambler.ru/cgi/interpreter?'+urllib.urlencode(data)
+    return  'http://overpass-api.de/api/interpreter?'+urllib.urlencode(data)
+
 
     #return query
 def diffStatisticArrays(prev,current):
@@ -286,7 +288,7 @@ ORDER BY map_id;
             #Do overpass query
             osmFileHandler='tmp/data.osm'
 
-            urllib.urlretrieve(overpass_query,osmFileHandler)
+            #urllib.urlretrieve(overpass_query,osmFileHandler)
 
             #osmFileHandler=doOverpassQuery(overpass_query)
             #Drop tables in DB
@@ -301,6 +303,7 @@ ORDER BY map_id;
                 
         #stat = calcCurrentStatistic(cur)   
         compareResult, stat=compareStatistic(cur,currentmap)
+        compareResult = True
         if (compareResult == False):
             print 'not intresting'
             continue
@@ -308,11 +311,11 @@ ORDER BY map_id;
             
         #stage1 - simple png picture
 
-        gdalcmd='gdal_translate -of "GTiff" -a_nodata 0 -co ALPHA=YES -outsize '+currentmap['size_px']+' -r lanczos -projwin  '+currentmap['bbox_string_gdal']+'   wmsosmot.xml '+tmpfiles['stage1']
+        gdalcmd='gdal_translate -of "GTiff" -a_nodata 0 -co ALPHA=YES -outsize '+currentmap['size_px']+' -r lanczos -projwin  '+currentmap['bbox_string_gdal']+'   gdal_wms/wmsosmot.xml '+tmpfiles['stage1']
         print gdalcmd
         os.system( gdalcmd)      
 
-        gdalcmd='gdal_translate -of "PNG" -outsize '+currentmap['size_px']+' -r lanczos -projwin  '+currentmap['bbox_string_gdal']+'   wmsosm.xml '+tmpfiles['background']
+        gdalcmd='gdal_translate -of "PNG" -outsize '+currentmap['size_px']+' -r lanczos -projwin  '+currentmap['bbox_string_gdal']+'   gdal_wms/wmsosm.xml '+tmpfiles['background']
         print gdalcmd
         os.system( gdalcmd)   
       

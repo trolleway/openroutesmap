@@ -1,0 +1,21 @@
+<GDAL_WMS>
+    <Service name="WMS">
+        <Version>1.1.1</Version>
+        <ServerUrl>http://192.168.122.94:6543/api/resource/52/wms?</ServerUrl>
+        <SRS>EPSG:3857</SRS>
+        <ImageFormat>image/png</ImageFormat>
+        <Layers>tram_lines_qgis,tram_terminals_qgis</Layers>
+        <Styles></Styles>
+    </Service>
+    <DataWindow>
+      <UpperLeftX>-20037508.34</UpperLeftX>
+      <UpperLeftY>20037508.34</UpperLeftY>
+      <LowerRightX>20037508.34</LowerRightX>
+      <LowerRightY>-20037508.34</LowerRightY>
+      <SizeY>40075016</SizeY>
+      <SizeX>40075016.857</SizeX>
+    </DataWindow>
+    <Projection>EPSG:3857</Projection>
+    <BandsCount>3</BandsCount>
+<UserPwd>administrator:admin</UserPwd>
+</GDAL_WMS>
